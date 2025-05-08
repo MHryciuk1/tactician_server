@@ -13,6 +13,7 @@ func _init() -> void:
 		}
 	moves = {
 		"attack1" : {
+			"name" : "attack1",
 			"function" : Callable(attack_effect),
 			"description" : str("range: ", stats.attack_range, "dmg: ", stats.damage),
 			"max_targets" : 1,

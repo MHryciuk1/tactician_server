@@ -5,7 +5,9 @@ signal unit_moved(unit, to_coord)
 signal unit_died(unit)
 var unique_id :int = -1
 var id : int = 0
+
 @export var team: int = 1
+
 @export var unit_type: String = "soldier"
 var stats : Dictionary = {
 	"cost": 1,
@@ -52,6 +54,7 @@ func get_dict() -> Dictionary:
 		"pos" : current_cord,
 		"stats" : stats,
 		"moves": moves,
+		"alive" : alive
 	}
 func check_attack(cord: Vector2i) -> bool:
 
@@ -67,7 +70,7 @@ func on_attacked(attacker: Unit, dmg: int) -> void:
 	if stats.hp <= 0 and alive:
 		print("im dead")
 		alive = false
-		logic_manager.on_unit_death(self)
-		emit_signal("unit_died", self)
+		#logic_manager.on_unit_death(self)
+		#emit_signal("unit_died", self)
 
 	

@@ -61,7 +61,73 @@ func get_player_number(client_id : int) -> int:
 		return 2
 	print("ERROR: unknown client")
 	return 0
-
+func is_valid_effect(source : Unit, targets : Array, move : Dictionary) -> bool:
+	return true
+func do_effect(source_unit: Unit, effect_function:Callable, targets: Array) -> void:
+	for target in targets:
+		effect_function.call( target)
+func prune_container(container : Dictionary) -> void:
+	for i in container.keys():
+		var unit = container.get(i)
+		if(!unit.alive):
+			container.erase(i)
+func prune_units() -> void:
+	for i in unit_containers:
+		prune_container(i)
+@rpc()
+func game_over(i_won : bool) -> void:
+	pass
+func check_game_over() -> void:
+	if(unit_containers[0].is_empty() and unit_containers[1].is_empty()):
+		print("draw")
+		game_over.rpc_id(player_ids[0], false)
+		game_over.rpc_id(player_ids[1], false)
+	elif unit_containers[0].is_empty():
+		print("player 1 lost")
+		game_over.rpc_id(player_ids[0], false)
+		game_over.rpc_id(player_ids[1], true)
+	elif unit_containers[1].is_empty():
+		print("player 2 lost")
+		game_over.rpc_id(player_ids[0], true)
+		game_over.rpc_id(player_ids[1], false)
+		
+@rpc("any_peer","call_remote","unreliable_ordered")
+func effect_request(source_unique_id : int, target_unique_ids : Array[int], move_name : String) -> void:
+	var sending_client = multiplayer.get_remote_sender_id()
+	var player =get_player_number(sending_client)
+	if(!player):
+		return
+	if player != turn_player:
+		print(str("player ", player," is not turn player"))
+		return
+	var source_unit : Unit = get_unit_by_unique_id(source_unique_id, player)
+	if ! source_unit:
+		print("source unit does not exist")
+		return
+	var target_units : Array = []
+	for i in target_unique_ids:
+		var target_unit : Unit = get_unit_by_unique_id(i, 3-player)
+		if ! target_unit:
+			print("target unit does not exist")
+			return
+		target_units.append(target_unit)
+	var move : Dictionary = source_unit.moves.get(move_name)
+	if !move:
+		print(str("move ", move_name, " does not exist"))
+		return
+	if is_valid_effect(source_unit, target_units, move):
+		do_effect(source_unit, move.function,target_units)
+		var update_data : Array[Dictionary] = [source_unit.get_dict()]
+		for i in target_units:
+			update_data.append(i.get_dict())
+		unit_update.rpc_id(player_ids[player -1], update_data)
+		unit_update.rpc_id(player_ids[player -2], update_data)
+		prune_units()
+		check_game_over()
+		
+	else :
+		print("not a valid move")
+		return
 @rpc("any_peer","call_remote","unreliable_ordered")
 func move_request(source : int, target : Vector2i) -> void:
 	
